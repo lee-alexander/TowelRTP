@@ -4,10 +4,13 @@ class RTPSocket(object):
     MTU_SIZE = 1000
 
     def __init__(self):
-        self.sock = socket.socket()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     # Listen for client connections
     def listen(self, port):
+        pass
+
+    def accept(self):
         pass
 
     # Connect to the server
@@ -27,12 +30,16 @@ class RTPSocket(object):
         pass
 
 class RTPSocket_Mock(RTPSocket):
-    def __init__(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(self, internal_socket=None):
+        self.sock = internal_socket if internal_socket is not None else socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def listen(self, port):
         self.sock.bind(('', port))
         self.sock.listen(1)
+
+    def accept(self):
+        client, address = self.sock.accept()
+        return RTPSocket_Mock(client)
 
     def connect(self, address, port):
         self.sock.connect((address, port))
@@ -44,4 +51,4 @@ class RTPSocket_Mock(RTPSocket):
         self.sock.send(data)
 
     def receive(self, buffer_size):
-        self.sock.recv(buffer_size)
+        return self.sock.recv(buffer_size)
