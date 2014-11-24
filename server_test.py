@@ -1,16 +1,14 @@
 import RTPSocket
 
-sock = RTPSocket.RTPSocket_Mock()
-sock.listen(4557)
+sock = RTPSocket.RTPSocket(8006)
 
 try:
-    while True:
-        client = sock.accept()
-        data = client.receive(128)
+    sock.accept()
 
+    while sock.connected:
+        data = sock.receive()
         print(str(data))
 
-        client.send('Received your data!')
-        client.close()
+        sock.send('Received your data!')
 finally:
     sock.close()

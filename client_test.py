@@ -1,9 +1,9 @@
 import RTPSocket
 
-sock = RTPSocket.RTPSocket_Mock()
-sock.connect('localhost', 4557)
+sock = RTPSocket.RTPSocket(8007)
+sock.connect('localhost', 8006)
 
-sock.send('this is a test')
+sock.send('Client: 123456789123456789')
 result = sock.receive()
 print('From server: ' + str(result))
 
