@@ -140,7 +140,8 @@ class RTPSocketPipeline(object):
         self._pending_ack_packets = OrderedDict() # packets that were went but not yet acknowledged
         self._pending_ack_packets_lock = Lock()
         self._receive_packets_staging = {} # buffered packets that were received out of order, stored by seq_num
-        self._receive_packets = Queue() # in order and final
+        self._receive_packets = Queue() # in order and final, ready to be used by upper level
+        self._queued_ack_numbers = Queue() # ACK nums that need to be carried to the other side
 
         self.running = False
         self.rtp_sock = rtp_socket
@@ -220,37 +221,75 @@ class RTPSocketPipeline(object):
                             self.send_base = new_send_base
 
                             self.send_base_lock.release()
-
                     else:
                         self._pending_ack_packets_lock.release()
 
 
                 # Do receiver-side stuff (data itself)
-                self._receive_packets_staging.put(pkt)
-                self._unstage_packets()
+                if self.rcv_base - self.window_size >= pkt.seq_num < self.rcv_base:
+                    # Need to resend an ACK for this one, but no further actions
+                    self._queued_ack_numbers.put(pkt.seq_num)
+                elif self.rcv_base >= pkt.seq_num < self.rcv_base + self.window_size:
+                    # First send an ACK
+                    self._queued_ack_numbers.put(pkt.seq_num)
+
+                    # Make sure it hasn't already been received before proceeding
+                    if not pkt.seq_num in self._receive_packets_staging:
+                        self._receive_packets_staging[pkt.seq_num] = pkt
+
+                        if pkt.seq_num == self.rcv_base:
+                            self._unstage_ordered_packets()
+
             except socket.timeout:
                 continue
 
-    def _unstage_packets(self):
-        self._receive_packets.put(self._receive_packets_staging.get())
+    # Try to move as many continuous packets upwards as we can
+    def _unstage_ordered_packets(self):
+        while self.rcv_base in self._receive_packets_staging:
+            # Remove this packet from staging
+            pkt = self._receive_packets_staging[self.rcv_base]
+            del self._receive_packets_staging[self.rcv_base]
+
+            # Send it upwards
+            self._receive_packets.put(pkt)
+
+            # Move forward in the staging buffer
+            self.rcv_base += 1
 
     def _run_send(self):
         while self.running:
             self.send_base_lock.acquire()
 
+            ack_ferried = False
+            any_packet_sent = False
+
+            # Send any outstanding packets
             if self.next_seq_num < self.send_base + self.window_size:
                 try:
                     pkt = self._send_packets.get(timeout=1)
-
                     pkt.set_seq_num(self.next_seq_num)
+
+                    # Try to ferry any ACKs over
+                    if not self._queued_ack_numbers.empty():
+                        pkt.set_ack_num(self._queued_ack_numbers.get())
+                        ack_ferried = True
+
                     self._send_packet(pkt)
                     self.next_seq_num += 1
+                    any_packet_sent = True
                 except Empty:
                     continue
                 finally:
                     self.send_base_lock.release()
             else:
                 self.send_base_lock.release()
+
+            # If no data could ferry the ACK over, send a dedicated ACK message over
+            if not ack_ferried and not self._queued_ack_numbers.empty():
+                pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get())
+                self._send_packet(pkt, pkt_timeout=False)
+
+            if not any_packet_sent:
                 sleep(1)
 
     def _run_timer(self):
@@ -277,12 +316,13 @@ class RTPSocketPipeline(object):
     def _get_oldest_seq(self):
         return None if not self._pending_ack_packets else self._pending_ack_packets.iterkeys().next()
 
-    def _send_packet(self, pkt):
-        self._pending_ack_packets_lock.acquire()
-        self._pending_ack_packets[self.next_seq_num] = pkt
-        self._pending_ack_packets_lock.release()
+    def _send_packet(self, pkt, pkt_timeout=True):
+        if pkt_timeout:
+            self._pending_ack_packets_lock.acquire()
+            self._pending_ack_packets[pkt.seq_num] = pkt
+            self._pending_ack_packets_lock.release()
+            pkt.timeout = datetime.now() + timedelta(seconds=1)
 
-        pkt.timeout = datetime.now() + timedelta(seconds=1)
         self.udp_sock.sendto(pkt.serialize(), (self.other_addr, self.other_port))
 
 

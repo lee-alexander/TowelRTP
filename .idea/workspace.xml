@@ -7,7 +7,7 @@
     <ignored path="RTP.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416895934354" ignored="false" />
-    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416900877504" ignored="false" />
+    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416904628693" ignored="false" />
     <file path="/sample.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416797342240" ignored="false" />
     <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813473980" ignored="false" />
     <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813454956" ignored="false" />
@@ -72,7 +72,7 @@
       <file leaf-file-name="RTPSocket.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/RTPSocket.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="243" column="0" selection-start="8129" selection-end="8129" vertical-scroll-proportion="0.9828179">
+            <state line="294" column="25" selection-start="10423" selection-end="10423" vertical-scroll-proportion="0.716763">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -110,7 +110,7 @@
     <option name="x" value="-1919" />
     <option name="y" value="-307" />
     <option name="width" value="1916" />
-    <option name="height" value="1019" />
+    <option name="height" value="1013" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -199,7 +199,9 @@
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RTPSocket.py" />
       <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PythonCover" />
       <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="PythonCover" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
@@ -370,7 +372,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1919" y="-307" width="1916" height="1019" extended-state="6" />
+    <frame x="-1919" y="-307" width="1916" height="1013" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -388,7 +390,7 @@
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13582888" sideWeight="0.96670365" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13582888" sideWeight="0.9988827" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32871014" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -520,11 +522,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fta-server.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="46" column="7" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.5060373" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/client_test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="9" column="12" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0" />
@@ -535,11 +532,6 @@
         <state line="11" column="8" selection-start="166" selection-end="166" vertical-scroll-proportion="0.18111965" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fta-client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="44" column="34" selection-start="1070" selection-end="1070" vertical-scroll-proportion="0.25905597" />
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Library/Caches/IntelliJIdea12/python_stubs/-439002468/datetime.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="468" column="8" selection-start="16533" selection-end="16533" vertical-scroll-proportion="0.33333334">
@@ -547,9 +539,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/fta-server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="46" column="7" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.4329897">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fta-client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="44" column="34" selection-start="1070" selection-end="1070" vertical-scroll-proportion="0.72164947">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/RTPSocket.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="243" column="0" selection-start="8129" selection-end="8129" vertical-scroll-proportion="0.9828179">
+        <state line="294" column="25" selection-start="10423" selection-end="10423" vertical-scroll-proportion="0.716763">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
