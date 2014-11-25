@@ -7,8 +7,9 @@ try:
 
     while sock.connected:
         data = sock.receive()
-        print(str(data))
 
-        sock.send('Received your data!')
+        if data is not None:
+            print(str(data))
+            sock.send('Received your data!')
 finally:
     sock.close()

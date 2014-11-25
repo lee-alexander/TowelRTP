@@ -7,7 +7,7 @@ from time import sleep
 from datetime import datetime, timedelta
 
 class RTPPacket:
-    HEADER_SIZE = 35
+    HEADER_SIZE = 51
 
     def __init__(self, payload='', is_ack=False, is_handshake=False, is_disconnect=False, client_info=None,
                  seq_num=0, ack_num=0, timeout=None):
@@ -42,7 +42,7 @@ class RTPPacket:
         result += bool_str(self.is_disconnect)
         result += str(self.seq_num).zfill(8)
         result += str(self.ack_num).zfill(8)
-        result += self.checksum if checksum_filled else ('0' * 16)
+        result += self.checksum if checksum_filled else ('0' * 32)
         result += self.payload
         return result
 
@@ -56,10 +56,10 @@ class RTPPacket:
         is_disconnect = str_bool(data[2])
         seq_num = int(data[3:11])
         ack_num = int(data[11:19])
-        checksum = data[19:35]
-        payload = data[35:] if len(data) > 35 else ''
+        checksum = data[19:51]
+        payload = data[51:] if len(data) > 51 else ''
 
-        pkt_result = cls(payload, is_ack, is_handshake, is_disconnect, client_info, ack_num=ack_num, seq_num=seq_num)
+        pkt_result = cls(payload, is_ack, is_handshake, is_disconnect, client_info, seq_num=seq_num, ack_num=ack_num)
 
         return pkt_result if checksum == pkt_result.checksum else None
 
@@ -91,17 +91,20 @@ class RTPSocket(object):
 
         # Wait to receive a handshake from a client
         pkt = None
+        print('Waiting on handshake')
         while pkt is None or not pkt.is_handshake:
             pkt = self.pipeline.dequeue_packet()
 
         self.pipeline.update_client_info(pkt.client_info[0], pkt.client_info[1])
         self.connected = True
+        print('Connected')
 
     # Connect to the server (non-blocking)
     def connect(self, address, port):
         if self.connected:
             return
 
+        print('Connected')
         self.pipeline.update_client_info(address, port)
         self.pipeline.enqueue_packet_to_send(RTPPacket(is_handshake=True))
         self.connected = True
@@ -130,6 +133,11 @@ class RTPSocket(object):
             return None
 
         pkt = self.pipeline.dequeue_packet()
+
+        # Make sure pipeline hasn't closed
+        if not self.pipeline.running:
+            self.close(broadcast=False)
+
         return None if pkt is None else pkt.payload
 
 
@@ -189,6 +197,9 @@ class RTPSocketPipeline(object):
                 return self._receive_packets.get(timeout=1)
             except Empty:
                 continue
+            except KeyboardInterrupt:
+                self.stop()
+                raise
 
         return None
 
@@ -196,10 +207,17 @@ class RTPSocketPipeline(object):
         while self.running:
             try:
                 data, addr = self.udp_sock.recvfrom(RTPSocket.MTU_SIZE)
-
                 pkt = RTPPacket.deserialize_and_create(data, addr)
+
                 # Don't proceed if the checksum was invalid
                 if not pkt:
+                    print('Bad checksum')
+                    continue
+
+                print('Received packet: (' + pkt.serialize() + ')')
+
+                if pkt.is_disconnect:
+                    self.running = False
                     continue
 
                 # Do sender-side stuff (ACK handling)
@@ -273,7 +291,9 @@ class RTPSocketPipeline(object):
                     if not self._queued_ack_numbers.empty():
                         pkt.set_ack_num(self._queued_ack_numbers.get())
                         ack_ferried = True
+                        print('Ferrying ACK')
 
+                    print('Sending packet: (' + pkt.serialize() + ')')
                     self._send_packet(pkt)
                     self.next_seq_num += 1
                     any_packet_sent = True
@@ -288,6 +308,7 @@ class RTPSocketPipeline(object):
             if not ack_ferried and not self._queued_ack_numbers.empty():
                 pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get())
                 self._send_packet(pkt, pkt_timeout=False)
+                print('Sending plain ACK')
 
             if not any_packet_sent:
                 sleep(1)

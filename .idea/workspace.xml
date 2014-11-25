@@ -3,14 +3,15 @@
   <component name="ChangeListManager">
     <list default="true" id="22a58d9e-0617-4eac-b112-58fd956e86b2" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RTPSocket.py" afterPath="$PROJECT_DIR$/RTPSocket.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/server_test.py" afterPath="$PROJECT_DIR$/server_test.py" />
     </list>
     <ignored path="RTP.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416895934354" ignored="false" />
-    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416904628693" ignored="false" />
+    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416907081882" ignored="false" />
     <file path="/sample.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416797342240" ignored="false" />
     <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813473980" ignored="false" />
-    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813454956" ignored="false" />
+    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416907006424" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,13 +70,40 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="RTPSocket.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="RTPSocket.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/RTPSocket.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="294" column="25" selection-start="10423" selection-end="10423" vertical-scroll-proportion="0.716763">
+            <state line="142" column="0" selection-start="4336" selection-end="4336" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="fta-client.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/fta-client.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="44" column="34" selection-start="1070" selection-end="1070" vertical-scroll-proportion="0.7283237">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="client_test.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/client_test.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="9" column="12" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="server_test.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/server_test.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="12" column="44" selection-start="235" selection-end="235" vertical-scroll-proportion="0.0">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -100,8 +128,8 @@
       <list>
         <option value="$PROJECT_DIR$/sample.py" />
         <option value="$PROJECT_DIR$/server.py" />
-        <option value="$PROJECT_DIR$/server_test.py" />
         <option value="$PROJECT_DIR$/client_test.py" />
+        <option value="$PROJECT_DIR$/server_test.py" />
         <option value="$PROJECT_DIR$/RTPSocket.py" />
       </list>
     </option>
@@ -522,16 +550,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/client_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="12" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/server_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="11" column="8" selection-start="166" selection-end="166" vertical-scroll-proportion="0.18111965" />
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Library/Caches/IntelliJIdea12/python_stubs/-439002468/datetime.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="468" column="8" selection-start="16533" selection-end="16533" vertical-scroll-proportion="0.33333334">
@@ -546,19 +564,33 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fta-client.py">
+    <entry file="file://$PROJECT_DIR$/server_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="44" column="34" selection-start="1070" selection-end="1070" vertical-scroll-proportion="0.72164947">
+        <state line="12" column="44" selection-start="235" selection-end="235" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="9" column="12" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RTPSocket.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="294" column="25" selection-start="10423" selection-end="10423" vertical-scroll-proportion="0.716763">
+        <state line="142" column="0" selection-start="4336" selection-end="4336" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fta-client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="44" column="34" selection-start="1070" selection-end="1070" vertical-scroll-proportion="0.7283237">
+          <folding />
         </state>
       </provider>
     </entry>
