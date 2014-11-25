@@ -10,9 +10,10 @@ P: the UDP port number of NetEmu
 Example: python fta-server *TODO*
 
 """
+import os
 
 import sys
-from RTPSocket import RTPSocket_Mock
+from RTPSocket import RTPSocket
 from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
 
 
@@ -31,7 +32,7 @@ netEmuIp = sys.argv[2]
 netEmuPort = sys.argv[3]
 
 #socket setup
-clientSocket = RTPSocket_Mock()
+clientSocket = RTPSocket(7798)
 
 response = ""
 fromAddress = ""
@@ -44,13 +45,16 @@ try:
         elif command[:4] == "post":
             filename = command[5:]
             try:
-                infile = open(filename)  # readonly by default
-                print "Posting file '", filename, "' to server..."
-                clientSocket.send(encodeHeader(1, filename) + infile.read())
-                infile.close()
-                print "File transfer complete!"
+                if os.path.isfile(filename):
+                    infile = open(filename)  # readonly by default
+                    print "Posting file '", filename, "' to server..."
+                    clientSocket.send(encodeHeader(1, filename) + infile.read())
+                    infile.close()
+                    print "File transfer complete!"
+                else:
+                    print "File not found. Please check the file name and try again."
             except:
-                print "Command: '", command, "'failed. Please check your file name and try again."
+                print "Command: '", command, "'failed."
         elif command[:3] == "get":
             filename = command[4:]
             try:

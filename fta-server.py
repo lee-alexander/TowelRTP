@@ -14,7 +14,7 @@ import os
 
 import sys
 import thread
-from RTPSocket import RTPSocket_Mock
+from RTPSocket import RTPSocket
 from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
 
 
@@ -22,7 +22,7 @@ def listenForCommands(serverSocket):
     while 1:
         command = raw_input(">")
         print "Command: " + command
-        if command.strip() == "terminate":
+        if command == "terminate":
             serverSocket.close()
             os._exit(1)
         elif command[:6] == "window":
@@ -40,7 +40,7 @@ emulatorIP = sys.argv[2]
 emulatorPort = int(sys.argv[3])
 
 #setup socket
-serverSocket = RTPSocket_Mock()
+serverSocket = RTPSocket(serverPort)
 
 try:
     thread.start_new_thread(listenForCommands, (serverSocket,))
@@ -49,24 +49,26 @@ except:
 
 print "Server is up and listening\n"
 try:
-    serverSocket.listen(serverPort)
     while 1:  # start listening and never stop
-        client = serverSocket.accept()
-        data = client.receive()
+        serverSocket.accept()
+        data = serverSocket.receive()
         operation, filename, fileSize = decodeHeader(data)
-        if operation == 1:  # post
+        if operation == "1":  # post
             outfile = open("server-" + filename, "wr")
             remaining = fileSize + HEADER_SIZE - len(data)
             outfile.write(data[HEADER_SIZE:])
             while remaining > 0:
-                data = client.receive()
+                data = serverSocket.receive()
                 outfile.write(data)
                 remaining -= len(data)
             outfile.close()
         else:  # get
-            infile = open("server-" + filename)
-            client.send(encodeHeader(operation, filename) + infile.read())
-            infile.close()
+            if os.path.isfile(filename):
+                infile = open("server-" + filename)
+                serverSocket.send(encodeHeader(operation, filename) + infile.read())
+                infile.close()
+            else:
+                serverSocket.send()
 except:
     print "Error: ", sys.exc_info()
 finally:
