@@ -12,26 +12,8 @@ Example: python fta-server *TODO*
 """
 
 import sys
-import os
 from RTPSocket import RTPSocket_Mock
-
-def encodeSize(fileSize):
-    encoded = str(fileSize)
-    while len(encoded) < 32:
-        encoded = "0"+encoded
-    return encoded
-
-
-def encodeFilename(filename):
-    encoded = filename
-    while len(encoded) < 256:
-        encoded = " "+encoded
-    return encoded
-
-
-def encodeHeader(filename):
-    size = os.path.getsize(filename)
-    return encodeFilename(filename) + encodeSize(size)
+from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
 
 
 if len(sys.argv) != 4:
@@ -62,15 +44,29 @@ try:
         elif command[:4] == "post":
             filename = command[5:]
             try:
-                infile = open(filename) #readonly by default
+                infile = open(filename)  # readonly by default
                 print "Posting file '", filename, "' to server..."
-                clientSocket.send(encodeHeader(filename) + infile.read())
+                clientSocket.send(encodeHeader(1, filename) + infile.read())
                 infile.close()
                 print "File transfer complete!"
             except:
                 print "Command: '", command, "'failed. Please check your file name and try again."
         elif command[:3] == "get":
-            print "TODO"
+            filename = command[4:]
+            try:
+                clientSocket.send(encodeHeader(0, filename))
+                data = clientSocket.receive()
+                operation, filename, fileSize = decodeHeader(data)
+                outfile = open("client-" + filename, "wr")
+                remaining = fileSize + HEADER_SIZE - len(data)
+                outfile.write(data[HEADER_SIZE:])
+                while remaining > 0:
+                    data = clientSocket.receive()
+                    outfile.write(data)
+                    remaining -= len(data)
+                outfile.close()
+            except:
+                print "Command: '", command, "'failed. Please check your file name and try again."
         elif command[:6] == "window":
             print "TODO"
         elif command == "disconnect":

@@ -15,11 +15,7 @@ import os
 import sys
 import thread
 from RTPSocket import RTPSocket_Mock
-
-
-#returns tuple (filename, filesize)
-def decodeHeader(header):
-    return header[:256].strip(), int(header[256:288])
+from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
 
 
 def listenForCommands(serverSocket):
@@ -38,7 +34,6 @@ def listenForCommands(serverSocket):
                   "window [int]:    Takes a integer between x and z which determines the windows size"
 
 FILE_READ_SIZE = 2048
-HEADER_SIZE = 288
 
 serverPort = int(sys.argv[1])
 emulatorIP = sys.argv[2]
@@ -58,16 +53,20 @@ try:
     while 1:  # start listening and never stop
         client = serverSocket.accept()
         data = client.receive()
-        filename, fileSize = decodeHeader(data)
-        outfile = open("server-" + filename, "wr")
-        remaining = fileSize + HEADER_SIZE - len(data)
-        outfile.write(data[288:])
-        while remaining > 0:
-            data = client.receive()
-            outfile.write(data)
-            remaining -= len(data)
-        outfile.close()
-        serverSocket.send("Success!")  # return result to client
+        operation, filename, fileSize = decodeHeader(data)
+        if operation == 1:  # post
+            outfile = open("server-" + filename, "wr")
+            remaining = fileSize + HEADER_SIZE - len(data)
+            outfile.write(data[HEADER_SIZE:])
+            while remaining > 0:
+                data = client.receive()
+                outfile.write(data)
+                remaining -= len(data)
+            outfile.close()
+        else:  # get
+            infile = open("server-" + filename)
+            client.send(encodeHeader(operation, filename) + infile.read())
+            infile.close()
 except:
     print "Error: ", sys.exc_info()
 finally:
