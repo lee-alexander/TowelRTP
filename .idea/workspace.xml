@@ -3,13 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="22a58d9e-0617-4eac-b112-58fd956e86b2" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RTPSocket.py" afterPath="$PROJECT_DIR$/RTPSocket.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="RTP.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416895934354" ignored="false" />
-    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416895248102" ignored="false" />
+    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416900877504" ignored="false" />
     <file path="/sample.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416797342240" ignored="false" />
     <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813473980" ignored="false" />
     <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416813454956" ignored="false" />
@@ -74,7 +72,7 @@
       <file leaf-file-name="RTPSocket.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/RTPSocket.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="142" column="60" selection-start="4578" selection-end="4578" vertical-scroll-proportion="-0.68728524">
+            <state line="243" column="0" selection-start="8129" selection-end="8129" vertical-scroll-proportion="0.9828179">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -551,7 +549,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/RTPSocket.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="142" column="60" selection-start="4578" selection-end="4578" vertical-scroll-proportion="-0.68728524">
+        <state line="243" column="0" selection-start="8129" selection-end="8129" vertical-scroll-proportion="0.9828179">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>

@@ -137,15 +137,18 @@ class RTPSocket(object):
 class RTPSocketPipeline(object):
     def __init__(self, port, rtp_socket):
         self._send_packets = Queue() # input packets sent to the pipeline to transmit reliably to other side
-        self._pending_ack_packets = OrderedDict()
+        self._pending_ack_packets = OrderedDict() # packets that were went but not yet acknowledged
         self._pending_ack_packets_lock = Lock()
         self._receive_packets_staging = {} # buffered packets that were received out of order, stored by seq_num
         self._receive_packets = Queue() # in order and final
 
         self.running = False
         self.rtp_sock = rtp_socket
+
         self.next_seq_num = 1
-        self.base_num = 1
+        self.send_base_lock = Lock()
+        self.send_base = 1
+        self.rcv_base = 1
         self.window_size = 10
 
         # Internal UDP Socket initialization
@@ -192,9 +195,37 @@ class RTPSocketPipeline(object):
         while self.running:
             try:
                 data, addr = self.udp_sock.recvfrom(RTPSocket.MTU_SIZE)
-                #print('received: ' + str(data))
 
                 pkt = RTPPacket.deserialize_and_create(data, addr)
+                # Don't proceed if the checksum was invalid
+                if not pkt:
+                    continue
+
+                # Do sender-side stuff (ACK handling)
+                if pkt.is_ack and self.send_base <= pkt.ack_num < self.send_base + self.window_size:
+                    self._pending_ack_packets_lock.acquire()
+
+                    # Mark that packet as received, if it's still there
+                    if pkt.ack_num in self._pending_ack_packets:
+                        del self._pending_ack_packets[pkt.ack_num]
+                        self._pending_ack_packets_lock.release()
+
+                        # If this packet was the previous window base, we need to move it forward some amount
+                        if self.send_base == pkt.ack_num:
+                            self.send_base_lock.acquire()
+
+                            new_send_base = self.send_base + 1
+                            while new_send_base < min(self.next_seq_num, self.send_base + self.window_size) and new_send_base not in self._pending_ack_packets:
+                                new_send_base += 1
+                            self.send_base = new_send_base
+
+                            self.send_base_lock.release()
+
+                    else:
+                        self._pending_ack_packets_lock.release()
+
+
+                # Do receiver-side stuff (data itself)
                 self._receive_packets_staging.put(pkt)
                 self._unstage_packets()
             except socket.timeout:
@@ -205,7 +236,9 @@ class RTPSocketPipeline(object):
 
     def _run_send(self):
         while self.running:
-            if self.next_seq_num < self.base_num + self.window_size:
+            self.send_base_lock.acquire()
+
+            if self.next_seq_num < self.send_base + self.window_size:
                 try:
                     pkt = self._send_packets.get(timeout=1)
 
@@ -214,7 +247,10 @@ class RTPSocketPipeline(object):
                     self.next_seq_num += 1
                 except Empty:
                     continue
+                finally:
+                    self.send_base_lock.release()
             else:
+                self.send_base_lock.release()
                 sleep(1)
 
     def _run_timer(self):
@@ -238,16 +274,16 @@ class RTPSocketPipeline(object):
 
             sleep(0.25)
 
-
     def _get_oldest_seq(self):
         return None if not self._pending_ack_packets else self._pending_ack_packets.iterkeys().next()
 
     def _send_packet(self, pkt):
-        #print('sending packet: (' + packet.serialize() + ')')
-        pkt.timeout = datetime.now() + timedelta(seconds=1)
+        self._pending_ack_packets_lock.acquire()
         self._pending_ack_packets[self.next_seq_num] = pkt
-        self.udp_sock.sendto(pkt.serialize(), (self.other_addr, self.other_port))
+        self._pending_ack_packets_lock.release()
 
+        pkt.timeout = datetime.now() + timedelta(seconds=1)
+        self.udp_sock.sendto(pkt.serialize(), (self.other_addr, self.other_port))
 
 
 class RTPSocket_Mock(RTPSocket):
