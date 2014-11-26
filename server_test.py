@@ -5,12 +5,14 @@ sock = RTPSocket.RTPSocket(8007)
 
 try:
     sock.accept()
-    sleep(1)
+    sock.send('I am a server arghhh!')
+
+    while True:
+        sleep(1)
     '''
     data = sock.receive()
     while data is not None:
         print(data)
-        sock.send('Received your data!')
 
         data = sock.receive()
     '''
