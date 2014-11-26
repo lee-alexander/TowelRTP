@@ -222,7 +222,7 @@ class RTPSocketPipeline(object):
         while not self.connected:
             sleep(1)
 
-        log(Colors.wrap('\nConnected\n', Colors.OKGREEN))
+        log('\n' + Colors.wrap('Connected. Receive Base: ' + str(self.rcv_base), Colors.OKGREEN) + '\n')
 
     def connect(self, address, port):
         self.update_client_info(address, port)
@@ -340,8 +340,8 @@ class RTPSocketPipeline(object):
                     self._stage_packet(pkt)
                 else:
                     log('*[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num) + ']*')
-                    import pdb
-                    pdb.set_trace()
+                    #import pdb
+                    #pdb.set_trace()
             else:
                 self._stage_packet(pkt)
 
