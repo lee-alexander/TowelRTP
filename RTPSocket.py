@@ -32,6 +32,7 @@ class RTPPacket:
 
     def set_ack_num(self, num):
         self.ack_num = num
+        self.is_ack = True
         self.compute_checksum()
 
     def set_is_handshake(self, is_handshake):
@@ -134,6 +135,7 @@ class RTPSocket(object):
     def receive(self):
         pkt = self._pipeline.dequeue_packet()
         msg = None if pkt is None else pkt.payload
+
         while self._pipeline.has_packet():
             pkt = self._pipeline.dequeue_packet()
             msg += '' if pkt is None else pkt.payload
@@ -144,6 +146,8 @@ class RTPSocket(object):
 # Bulk of the RTP protocol code. Handles data at the packet level of abstraction. Ensures reliable delivery
 # to the other side and handles connection management
 class RTPSocketPipeline(object):
+    PACKET_TIMEOUT = 2
+
     def __init__(self, port, rtp_socket):
         self.running = False
         self.rtp_sock = rtp_socket
@@ -158,7 +162,7 @@ class RTPSocketPipeline(object):
         # Internal UDP Socket initialization
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_sock.bind(('', port))
-        self.udp_sock.settimeout(1)
+        self.udp_sock.settimeout(.000001)
 
     # Initialize our RTP connection data structures and variables
     def reset_connection(self):
@@ -184,17 +188,14 @@ class RTPSocketPipeline(object):
 
     def start(self):
         self.running = True
-        self.receive_thread = Thread(target=self._run_receive, name='ReceiveThread')
-        self.receive_thread.start()
-        self.send_thread = Thread(target=self._run_send, name='SendThread')
-        self.send_thread.start()
+        self.transfer_thread = Thread(target=self._run_transfer, name='TransferThread')
+        self.transfer_thread.start()
         self.timer_thread = Thread(target=self._run_timer, name='TimerThread')
         self.timer_thread.start()
 
     def stop(self):
         self.running = False
-        self.receive_thread.join()
-        self.send_thread.join()
+        self.transfer_thread.join()
         self.timer_thread.join()
         self.udp_sock.close()
 
@@ -227,69 +228,105 @@ class RTPSocketPipeline(object):
 
         return None
 
-    def _run_receive(self):
+    # Thread that handles sending and receiving from the underlying socket, and associated processing
+    def _run_transfer(self):
         while self.running:
-            try:
-                data, addr = self.udp_sock.recvfrom(RTPSocket.MTU_SIZE)
-                pkt = RTPPacket.deserialize_and_create(data, addr)
+            done_anything = False
+            done_anything |= self._receive_and_process_packets()
+            done_anything |= self._send_pending_packets()
 
-                # Don't proceed if the checksum was invalid
-                if not pkt:
-                    continue
+            if not done_anything: sleep(0.1)
 
-                log('R: (' + pkt.debug_str() + ')')
+    # Thread that watches for packet timeouts
+    def _run_timer(self):
+        while self.running:
+            self._pending_ack_packets_lock.acquire()
 
-                # Do connection stuff (SYN handling)
-                if pkt.is_handshake:
-                    self.rcv_base = pkt.seq_num
+            oldest_seq = self._get_oldest_seq()
+            while oldest_seq is not None and self._pending_ack_packets[oldest_seq].is_expired():
+                # Resend it
+                log('RESEND: [' + str(oldest_seq) + ']')
+                pkt = self._pending_ack_packets[oldest_seq]
+                self._send_packet(pkt, lock=False)
 
-                    if not pkt.is_ack:
-                        if not self.sent_syn_ack:
-                            self.sent_syn_ack = True
-                            # Received Part1, send Part2 of connection handshake
-                            self.update_client_info(pkt.client_info[0], pkt.client_info[1])
-                            self.enqueue_packet_to_send(RTPPacket(is_ack=True, ack_num=pkt.seq_num, is_handshake=True))
+                # Move to the end of the line
+                del self._pending_ack_packets[oldest_seq]
+                self._pending_ack_packets[oldest_seq] = pkt
 
-                        continue
+                # Try the next oldest
+                oldest_seq = self._get_oldest_seq()
 
-                # Watch for client connection completion
-                if pkt.is_ack and pkt.is_handshake and pkt.ack_num == self.part_2_expected_syn_ack:
-                    self.connected = True
+            self._pending_ack_packets_lock.release()
 
-                # Watch for server connection completion
-                if pkt.is_ack and pkt.ack_num == self.part_3_expected_ack:
-                    self.connected = True
+            sleep(0.2)
 
-                # SENDER-side stuff (Receive ACKs and adjust send window accordingly)
-                if pkt.is_ack and self.send_base <= pkt.ack_num < self.send_base + self.window_size:
-                    self._pending_ack_packets_lock.acquire()
+    def _receive_and_process_packets(self):
+        try:
+            data, addr = self.udp_sock.recvfrom(RTPSocket.MTU_SIZE)
+            pkt = RTPPacket.deserialize_and_create(data, addr)
 
-                    # Mark that packet as received, if it's still there
-                    if pkt.ack_num in self._pending_ack_packets:
-                        del self._pending_ack_packets[pkt.ack_num]
-                        self._pending_ack_packets_lock.release()
+            # Don't proceed if the checksum was invalid
+            if not pkt:
+                return True
 
-                        # If this packet was the previous window base, we need to move it forward some amount
-                        if self.send_base == pkt.ack_num:
-                            self._update_window()
-                    else:
-                        self._pending_ack_packets_lock.release()
+            log('R: (' + pkt.debug_str() + ')')
 
-                # RECEIVER-side stuff (Accept incoming data and send ACKs to the other side for it)
-                if pkt.has_non_ack_info():
-                    if self.rcv_base - self.window_size <= pkt.seq_num < self.rcv_base:
-                        # Need to resend an ACK for this one, but no further actions
-                        log('QUEUE Ack (Duplicate) [' + str(pkt.seq_num) + ']')
-                        self._queued_ack_numbers.put(pkt.seq_num)
-                    elif self.rcv_base <= pkt.seq_num < self.rcv_base + self.window_size:
-                        log('QUEUE Ack [' + str(pkt.seq_num) + ']')
-                        self._queued_ack_numbers.put(pkt.seq_num)
-                        self._stage_packet(pkt)
-                    else:
-                        log('[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num))
+            # Do connection stuff (SYN handling)
+            if pkt.is_handshake:
+                self.rcv_base = pkt.seq_num
 
-            except socket.timeout:
-                continue
+                if not pkt.is_ack:
+                    if not self.sent_syn_ack:
+                        self.sent_syn_ack = True
+                        # Received Part1, send Part2 of connection handshake
+                        self.update_client_info(pkt.client_info[0], pkt.client_info[1])
+                        self.enqueue_packet_to_send(RTPPacket(is_ack=True, ack_num=pkt.seq_num, is_handshake=True))
+
+                    return True
+
+            # Watch for client connection completion
+            if pkt.is_ack and pkt.is_handshake and pkt.ack_num == self.part_2_expected_syn_ack:
+                self.connected = True
+
+            # Watch for server connection completion
+            if pkt.is_ack and pkt.ack_num == self.part_3_expected_ack:
+                self.connected = True
+                self.rcv_base = pkt.seq_num + 1
+
+            # SENDER-side stuff (Receive ACKs and adjust send window accordingly)
+            if pkt.is_ack and self.send_base <= pkt.ack_num < self.send_base + self.window_size:
+                self._pending_ack_packets_lock.acquire()
+
+                # Mark that packet as received, if it's still there
+                if pkt.ack_num in self._pending_ack_packets:
+                    del self._pending_ack_packets[pkt.ack_num]
+                    self._pending_ack_packets_lock.release()
+
+                    # If this packet was the previous window base, we need to move it forward some amount
+                    if self.send_base == pkt.ack_num:
+                        self._update_window()
+                else:
+                    self._pending_ack_packets_lock.release()
+
+            # RECEIVER-side stuff (Accept incoming data and send ACKs to the other side for it)
+            if pkt.has_non_ack_info():
+                if self.rcv_base - self.window_size <= pkt.seq_num < self.rcv_base:
+                    # Need to resend an ACK for this one, but no further actions
+                    log('QUEUE Ack (Duplicate) [' + str(pkt.seq_num) + ']')
+                    self._queued_ack_numbers.put(pkt.seq_num)
+                elif self.rcv_base <= pkt.seq_num < self.rcv_base + self.window_size:
+                    log('QUEUE Ack [' + str(pkt.seq_num) + ']')
+                    self._queued_ack_numbers.put(pkt.seq_num)
+                    self._stage_packet(pkt)
+                else:
+                    log('[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num))
+            else:
+                self._stage_packet(pkt)
+
+        except socket.timeout:
+            return False
+
+        return True
 
     def _stage_packet(self, pkt):
         # Make sure it hasn't already been received before proceeding
@@ -323,66 +360,42 @@ class RTPSocketPipeline(object):
             # Move forward in the staging buffer
             self.rcv_base += 1
 
-    def _run_send(self):
-        while self.running:
-            self.send_base_lock.acquire()
+    def _send_pending_packets(self):
+        self.send_base_lock.acquire()
 
-            ack_ferried = False
-            any_packet_sent = False
+        ack_ferried = False
+        any_packet_sent = False
 
-            # Send any outstanding packets
-            if self.next_seq_num < self.send_base + self.window_size:
-                try:
-                    pkt = self._send_packets.get(timeout=0.2)
-                    pkt.set_seq_num(self.next_seq_num)
+        # Send any outstanding packets
+        if self.next_seq_num < self.send_base + self.window_size:
+            try:
+                pkt = self._send_packets.get(timeout=0.2)
+                pkt.set_seq_num(self.next_seq_num)
 
-                    # Try to ferry any ACKs over
-                    if not self._queued_ack_numbers.empty():
-                        pkt.set_ack_num(self._queued_ack_numbers.get())
-                        ack_ferried = True
+                # Try to ferry any ACKs over
+                if not self._queued_ack_numbers.empty():
+                    pkt.set_ack_num(self._queued_ack_numbers.get())
+                    ack_ferried = True
 
-                    self._send_packet(pkt)
-                    self.next_seq_num += 1
-                    any_packet_sent = True
-                except Empty:
-                    pass
-                finally:
-                    self.send_base_lock.release()
-            else:
-                log('Window full')
-                self.send_base_lock.release()
-
-            # If no data could ferry the ACK over, send a dedicated ACK message over
-            if not ack_ferried and not self._queued_ack_numbers.empty():
-                pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get(), seq_num=self.next_seq_num)
-                self._send_packet(pkt, pkt_timeout=False)
+                self._send_packet(pkt)
                 self.next_seq_num += 1
                 any_packet_sent = True
+            except Empty:
+                pass
+            finally:
+                self.send_base_lock.release()
+        else:
+            log('Window full')
+            self.send_base_lock.release()
 
-            if not any_packet_sent:
-                sleep(0.1)
+        # If no data could ferry the ACK over, send a dedicated ACK message over
+        if not ack_ferried and not self._queued_ack_numbers.empty():
+            pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get(), seq_num=self.next_seq_num)
+            self._send_packet(pkt, pkt_timeout=False)
+            self.next_seq_num += 1
+            any_packet_sent = True
 
-    def _run_timer(self):
-        while self.running:
-            self._pending_ack_packets_lock.acquire()
-
-            oldest_seq = self._get_oldest_seq()
-            while oldest_seq is not None and self._pending_ack_packets[oldest_seq].is_expired():
-                # Resend it
-                log('RESEND: [' + str(oldest_seq) + ']')
-                pkt = self._pending_ack_packets[oldest_seq]
-                self._send_packet(pkt, lock=False)
-
-                # Move to the end of the line
-                del self._pending_ack_packets[oldest_seq]
-                self._pending_ack_packets[oldest_seq] = pkt
-
-                # Try the next oldest
-                oldest_seq = self._get_oldest_seq()
-
-            self._pending_ack_packets_lock.release()
-
-            sleep(0.25)
+        return any_packet_sent
 
     def _get_oldest_seq(self):
         return None if not self._pending_ack_packets else self._pending_ack_packets.iterkeys().next()
@@ -392,7 +405,7 @@ class RTPSocketPipeline(object):
             if lock: self._pending_ack_packets_lock.acquire()
             self._pending_ack_packets[pkt.seq_num] = pkt
             if lock: self._pending_ack_packets_lock.release()
-            pkt.timeout = datetime.now() + timedelta(seconds=1)
+            pkt.timeout = datetime.now() + timedelta(seconds=RTPSocketPipeline.PACKET_TIMEOUT)
 
         # Special record keeping for Syn/Ack and Ack
         if pkt.is_handshake and pkt.is_ack:

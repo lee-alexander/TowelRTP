@@ -9,11 +9,11 @@
     </list>
     <ignored path="RTP.iws" />
     <ignored path=".idea/workspace.xml" />
-    <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416979598625" ignored="false" />
-    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416985488137" ignored="false" />
+    <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416990637757" ignored="false" />
+    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416993382307" ignored="false" />
     <file path="/sample.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416797342240" ignored="false" />
-    <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416985232580" ignored="false" />
-    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416982421766" ignored="false" />
+    <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416989882472" ignored="false" />
+    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416989903099" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,7 +80,7 @@
       <file leaf-file-name="RTPSocket.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/RTPSocket.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="387" column="101" selection-start="14414" selection-end="14414" vertical-scroll-proportion="0.24259056">
+            <state line="153" column="29" selection-start="5012" selection-end="5012" vertical-scroll-proportion="0.19319429">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -91,10 +91,8 @@
       <file leaf-file-name="server_test.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server_test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="14" column="19" selection-start="252" selection-end="252" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#0#16#0" expanded="true" />
-              </folding>
+            <state line="13" column="0" selection-start="843" selection-end="843" vertical-scroll-proportion="0.0">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -102,7 +100,7 @@
       <file leaf-file-name="client_test.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client_test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="6" column="5" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
+            <state line="5" column="4" selection-start="87" selection-end="87" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -128,8 +126,8 @@
       <list>
         <option value="$PROJECT_DIR$/sample.py" />
         <option value="$PROJECT_DIR$/server.py" />
-        <option value="$PROJECT_DIR$/server_test.py" />
         <option value="$PROJECT_DIR$/client_test.py" />
+        <option value="$PROJECT_DIR$/server_test.py" />
         <option value="$PROJECT_DIR$/RTPSocket.py" />
       </list>
     </option>
@@ -170,6 +168,7 @@
     </navigator>
     <panes>
       <pane id="Scope" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -190,7 +189,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -562,37 +560,31 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/fta-client.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="42" column="32" selection-start="978" selection-end="978" vertical-scroll-proportion="0.62568605">
-          <folding />
-        </state>
+        <state line="42" column="32" selection-start="978" selection-end="978" vertical-scroll-proportion="0.62568605" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fta-server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="28" selection-start="1474" selection-end="1474" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="53" column="28" selection-start="1474" selection-end="1474" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/client_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="6" column="5" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
+        <state line="5" column="4" selection-start="87" selection-end="87" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/server_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="19" selection-start="252" selection-end="252" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#16#0" expanded="true" />
-          </folding>
+        <state line="13" column="0" selection-start="843" selection-end="843" vertical-scroll-proportion="0.0">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RTPSocket.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="387" column="101" selection-start="14414" selection-end="14414" vertical-scroll-proportion="0.24259056">
+        <state line="153" column="29" selection-start="5012" selection-end="5012" vertical-scroll-proportion="0.19319429">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
