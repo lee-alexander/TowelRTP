@@ -146,12 +146,12 @@ class RTPSocket(object):
 # Bulk of the RTP protocol code. Handles data at the packet level of abstraction. Ensures reliable delivery
 # to the other side and handles connection management
 class RTPSocketPipeline(object):
-    PACKET_TIMEOUT = 2
+    PACKET_TIMEOUT = 6
 
     def __init__(self, port, rtp_socket):
         self.running = False
         self.rtp_sock = rtp_socket
-        self.window_size = 10
+        self.window_size = 1000
 
         self.reset_connection()
 
@@ -234,31 +234,29 @@ class RTPSocketPipeline(object):
             done_anything = False
             done_anything |= self._receive_and_process_packets()
             done_anything |= self._send_pending_packets()
+            self._run_timer()
 
-            if not done_anything: sleep(0.1)
+            #if not done_anything: sleep(0.1)
 
     # Thread that watches for packet timeouts
     def _run_timer(self):
-        while self.running:
-            self._pending_ack_packets_lock.acquire()
+        self._pending_ack_packets_lock.acquire()
 
+        oldest_seq = self._get_oldest_seq()
+        while oldest_seq is not None and self._pending_ack_packets[oldest_seq].is_expired():
+            # Resend it
+            log('RESEND: [' + str(oldest_seq) + ']')
+            pkt = self._pending_ack_packets[oldest_seq]
+            self._send_packet(pkt, lock=False)
+
+            # Move to the end of the line
+            del self._pending_ack_packets[oldest_seq]
+            self._pending_ack_packets[oldest_seq] = pkt
+
+            # Try the next oldest
             oldest_seq = self._get_oldest_seq()
-            while oldest_seq is not None and self._pending_ack_packets[oldest_seq].is_expired():
-                # Resend it
-                log('RESEND: [' + str(oldest_seq) + ']')
-                pkt = self._pending_ack_packets[oldest_seq]
-                self._send_packet(pkt, lock=False)
 
-                # Move to the end of the line
-                del self._pending_ack_packets[oldest_seq]
-                self._pending_ack_packets[oldest_seq] = pkt
-
-                # Try the next oldest
-                oldest_seq = self._get_oldest_seq()
-
-            self._pending_ack_packets_lock.release()
-
-            sleep(0.2)
+        self._pending_ack_packets_lock.release()
 
     def _receive_and_process_packets(self):
         try:
