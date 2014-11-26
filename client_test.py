@@ -1,10 +1,21 @@
 import RTPSocket
+from time import sleep
 
-sock = RTPSocket.RTPSocket(8007)
-sock.connect('localhost', 8006)
+sock = RTPSocket.RTPSocket(8006)
+try:
+    sock.connect('localhost', 8000)
+    sleep(1)
+    '''
+    sock.send('Client: 123456789123456789')
 
-sock.send('Client: 123456789123456789')
-result = sock.receive()
-print('From server: ' + str(result))
+    result = sock.receive()
+    printresult = ''
+    while result is not None:
+        printresult += result
+        result = sock.receive()
 
-sock.close()
+    print(printresult)
+    '''
+finally:
+    print('Closing socket')
+    sock.close()
