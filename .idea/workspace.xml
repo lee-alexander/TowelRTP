@@ -3,15 +3,16 @@
   <component name="ChangeListManager">
     <list default="true" id="22a58d9e-0617-4eac-b112-58fd956e86b2" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RTPSocket.py" afterPath="$PROJECT_DIR$/RTPSocket.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/client_test.py" afterPath="$PROJECT_DIR$/client_test.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/server_test.py" afterPath="$PROJECT_DIR$/server_test.py" />
     </list>
     <ignored path="RTP.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416990637757" ignored="false" />
-    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416995045128" ignored="false" />
+    <file path="/RTPSocket.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1417039768427" ignored="false" />
     <file path="/sample.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416797342240" ignored="false" />
-    <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416989882472" ignored="false" />
-    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1416989903099" ignored="false" />
+    <file path="/client_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1417028891895" ignored="false" />
+    <file path="/server_test.py" changelist="22a58d9e-0617-4eac-b112-58fd956e86b2" time="1417030832887" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,7 +79,7 @@
       <file leaf-file-name="RTPSocket.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/RTPSocket.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="16" selection-start="221" selection-end="221" vertical-scroll-proportion="0.13172337">
+            <state line="292" column="0" selection-start="9897" selection-end="9897" vertical-scroll-proportion="0.37358916">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -89,7 +90,7 @@
       <file leaf-file-name="server_test.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server_test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="10" column="32" selection-start="785" selection-end="785" vertical-scroll-proportion="0.0">
+            <state line="16" column="4" selection-start="916" selection-end="944" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -98,7 +99,7 @@
       <file leaf-file-name="client_test.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client_test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="6" column="34" selection-start="122" selection-end="122" vertical-scroll-proportion="0.0">
+            <state line="17" column="16" selection-start="825" selection-end="825" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -568,21 +569,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="32" selection-start="785" selection-end="785" vertical-scroll-proportion="0.0">
+        <state line="16" column="4" selection-start="916" selection-end="944" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/client_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="6" column="34" selection-start="122" selection-end="122" vertical-scroll-proportion="0.0">
+        <state line="17" column="16" selection-start="825" selection-end="825" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RTPSocket.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="16" selection-start="221" selection-end="221" vertical-scroll-proportion="0.13172337">
+        <state line="292" column="0" selection-start="9897" selection-end="9897" vertical-scroll-proportion="0.37358916">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>

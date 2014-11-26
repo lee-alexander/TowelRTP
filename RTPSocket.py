@@ -10,6 +10,22 @@ DEBUG_MSG = True
 def log(msg):
     if DEBUG_MSG: print(msg)
 
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+    @classmethod
+    def wrap(cls, text, color):
+        return '[' + color + text + Colors.ENDC + ']'
+
+    @classmethod
+    def wraps(cls, text, color):
+        return color + text + Colors.ENDC
+
 # Handles wrapping payload data with an RTP header, and verifying/computing checksum
 class RTPPacket:
     HEADER_SIZE = 51
@@ -46,7 +62,7 @@ class RTPPacket:
         self.checksum = md5(self.serialize(checksum_filled=False)).hexdigest()
 
     def has_non_ack_info(self):
-        return self.is_handshake or self.is_disconnect or self.payload
+        return self.seq_num > 0 or self.is_handshake or self.is_disconnect or self.payload
 
     def serialize(self, checksum_filled=True):
         result = ''
@@ -61,11 +77,14 @@ class RTPPacket:
 
     def debug_str(self):
         result = ''
-        if self.is_ack: result += '[ACK]'
-        if self.is_handshake: result += '[SNY]'
-        if self.is_disconnect: result += '[DYS]'
-        result += '[Seq: ' + str(self.seq_num) + ']'
-        if self.is_ack: result += '[Ack: ' + str(self.ack_num) + ']'
+
+        if not self.has_non_ack_info(): return Colors.wrap('ACK ' + str(self.ack_num), Colors.OKGREEN)
+
+        if self.is_ack: result += Colors.wrap('ACK', Colors.OKGREEN)
+        if self.is_handshake: result += Colors.wrap('SYN', Colors.OKGREEN)
+        if self.is_disconnect: result += Colors.wrap('FIN', Colors.FAIL)
+        if self.seq_num > 0: result += Colors.wrap('Seq: ' + str(self.seq_num), Colors.OKBLUE)
+        if self.is_ack: result += Colors.wrap('Ack: ' + str(self.ack_num), Colors.OKBLUE)
         result += self.payload
         return result
 
@@ -87,7 +106,7 @@ class RTPPacket:
         result = pkt_result if checksum == pkt_result.checksum else None
 
         if result is None:
-            log('[Bad checksum. \n    Data: ' + data + '\n    Reconstructed: ' + pkt_result.serialize(checksum_filled=False) + ']')
+            log(Colors.wrap('Bad checksum. \n    Data: ' + data + '\n    Reconstructed: ' + pkt_result.serialize(checksum_filled=False), Colors.FAIL))
 
         return result
 
@@ -103,7 +122,7 @@ def str_bool(str):
 
 # Light wrapper around RTPSocketPipeline that deals with data at the bytestream level of abstraction
 class RTPSocket(object):
-    MTU_SIZE = 65
+    MTU_SIZE = 70
 
     def __init__(self, port):
         # Pipeline threads for updating send/receive buffers using UDP socket info
@@ -114,7 +133,7 @@ class RTPSocket(object):
     def accept(self):
         self._pipeline.await_connection()
 
-    # Connect to a server (non-blocking for now)
+    # Connect to a server (blocking)
     def connect(self, address, port):
         return self._pipeline.connect(address, port)
 
@@ -146,12 +165,12 @@ class RTPSocket(object):
 # Bulk of the RTP protocol code. Handles data at the packet level of abstraction. Ensures reliable delivery
 # to the other side and handles connection management
 class RTPSocketPipeline(object):
-    PACKET_TIMEOUT = 6
+    PACKET_TIMEOUT = 2
 
     def __init__(self, port, rtp_socket):
         self.running = False
         self.rtp_sock = rtp_socket
-        self.window_size = 1000
+        self.window_size = 10
 
         self.reset_connection()
 
@@ -162,7 +181,7 @@ class RTPSocketPipeline(object):
         # Internal UDP Socket initialization
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_sock.bind(('', port))
-        self.udp_sock.settimeout(.000001)
+        self.udp_sock.settimeout(.01)
 
     # Initialize our RTP connection data structures and variables
     def reset_connection(self):
@@ -203,7 +222,7 @@ class RTPSocketPipeline(object):
         while not self.connected:
             sleep(1)
 
-        log('\n[Connected]\n')
+        log(Colors.wrap('\nConnected\n', Colors.OKGREEN))
 
     def connect(self, address, port):
         self.update_client_info(address, port)
@@ -218,6 +237,9 @@ class RTPSocketPipeline(object):
 
     def has_packet(self):
         return not self._receive_packets.empty()
+
+    def print_debug(self):
+        print('\n\nReceive base: ' + str(self.rcv_base) + '; Send Base: ' + str(self.send_base) + '; Next Seq: ' + str(self.next_seq_num) + '\n')
 
     def dequeue_packet(self):
         while self.running:
@@ -245,7 +267,7 @@ class RTPSocketPipeline(object):
         oldest_seq = self._get_oldest_seq()
         while oldest_seq is not None and self._pending_ack_packets[oldest_seq].is_expired():
             # Resend it
-            log('RESEND: [' + str(oldest_seq) + ']')
+            log(Colors.wraps('RESEND: [' + str(oldest_seq) + ']', Colors.WARNING))
             pkt = self._pending_ack_packets[oldest_seq]
             self._send_packet(pkt, lock=False)
 
@@ -275,6 +297,7 @@ class RTPSocketPipeline(object):
 
                 if not pkt.is_ack:
                     if not self.sent_syn_ack:
+                        self.rcv_base += 1
                         self.sent_syn_ack = True
                         # Received Part1, send Part2 of connection handshake
                         self.update_client_info(pkt.client_info[0], pkt.client_info[1])
@@ -283,13 +306,12 @@ class RTPSocketPipeline(object):
                     return True
 
             # Watch for client connection completion
-            if pkt.is_ack and pkt.is_handshake and pkt.ack_num == self.part_2_expected_syn_ack:
+            if not self.connected and pkt.is_handshake and pkt.is_ack and pkt.ack_num == self.part_2_expected_syn_ack:
                 self.connected = True
 
             # Watch for server connection completion
-            if pkt.is_ack and pkt.ack_num == self.part_3_expected_ack:
+            if not self.connected and pkt.is_ack and pkt.ack_num == self.part_3_expected_ack:
                 self.connected = True
-                self.rcv_base = pkt.seq_num + 1
 
             # SENDER-side stuff (Receive ACKs and adjust send window accordingly)
             if pkt.is_ack and self.send_base <= pkt.ack_num < self.send_base + self.window_size:
@@ -317,7 +339,9 @@ class RTPSocketPipeline(object):
                     self._queued_ack_numbers.put(pkt.seq_num)
                     self._stage_packet(pkt)
                 else:
-                    log('[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num))
+                    log('*[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num) + ']*')
+                    import pdb
+                    pdb.set_trace()
             else:
                 self._stage_packet(pkt)
 
@@ -366,8 +390,9 @@ class RTPSocketPipeline(object):
 
         # Send any outstanding packets
         if self.next_seq_num < self.send_base + self.window_size:
+            self.send_window_full = False
             try:
-                pkt = self._send_packets.get(timeout=0.2)
+                pkt = self._send_packets.get(timeout=0.01)
                 pkt.set_seq_num(self.next_seq_num)
 
                 # Try to ferry any ACKs over
@@ -383,14 +408,16 @@ class RTPSocketPipeline(object):
             finally:
                 self.send_base_lock.release()
         else:
-            log('Window full')
+            if not self.send_window_full:
+                log('*[Send window full]*')
+                self.send_window_full = True
+
             self.send_base_lock.release()
 
         # If no data could ferry the ACK over, send a dedicated ACK message over
         if not ack_ferried and not self._queued_ack_numbers.empty():
-            pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get(), seq_num=self.next_seq_num)
+            pkt = RTPPacket(is_ack=True, ack_num=self._queued_ack_numbers.get())
             self._send_packet(pkt, pkt_timeout=False)
-            self.next_seq_num += 1
             any_packet_sent = True
 
         return any_packet_sent
