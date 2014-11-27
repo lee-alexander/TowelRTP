@@ -350,16 +350,16 @@ class RTPSocketPipeline(object):
                 self._update_rcv_base(pkt.seq_num + 1)
                 self.update_client_info(pkt.client_info[0], pkt.client_info[1])
 
-            # Send part 2 (the SYN/ACK) even if we already sent it before
-            self.enqueue_packet_to_send(RTPPacket(is_ack=True, ack_num=pkt.seq_num, is_handshake=True))
+                # Send part 2 (the SYN/ACK)
+                self.enqueue_packet_to_send(RTPPacket(is_ack=True, ack_num=pkt.seq_num, is_handshake=True))
 
             return True
 
         # Client receives PART 2
         if pkt.is_connect_part_2():
             if not self.received_part_2:
-                self.connected = True
                 self.received_part_2 = True
+                self.connected = True
                 self._update_rcv_base(pkt.seq_num + 1)
 
                 # Mark Part1 as received
