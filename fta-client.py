@@ -59,14 +59,23 @@ try:
                     while not done:
                         response = ''
                         while len(response) < HEADER_SIZE:
-                            response += clientSocket.receive()
+                            r = clientSocket.receive()
+                            if r is None:
+                                clientSocket.close()
+                                print "Server disconnected"
+                                sys.exit(0)
+                            response += r
                         error, operation, filename, fileSize = decodeHeader(response)
                         if operation == "2":
                             remaining = fileSize + HEADER_SIZE - len(response)
                             while remaining > 0:
-                                message = clientSocket.receive()
-                                response += message
-                                remaining -= len(message)
+                                r = clientSocket.receive()
+                                if r is None:
+                                    clientSocket.close()
+                                    print "Server disconnected."
+                                    sys.exit(0)
+                                response += r
+                                remaining -= len(r)
                             print response[HEADER_SIZE:]
                         else:
                             done = True
@@ -86,7 +95,12 @@ try:
                 clientSocket.send(encodeFileHeader(0, 0, filename))
                 data = ""
                 while len(data) < HEADER_SIZE:
-                    data += clientSocket.receive()
+                    r = clientSocket.receive()
+                    if r is None:
+                        clientSocket.close()
+                        print "Server disconnected"
+                        sys.exit(0)
+                    data += r
                 if data[0] == "1":  # error repeat
                     print "File not found on server. Please check the file name and try again."
                 else:
@@ -98,6 +112,11 @@ try:
                     tick = 0
                     while remaining > 0:
                         message = clientSocket.receive()
+                        if message is None:
+                            clientSocket.close()
+                            outfile.close()
+                            print "Server disconnected"
+                            sys.exit(0)
                         data += message
                         outfile.write(message)
                         remaining -= len(message)
@@ -115,9 +134,12 @@ try:
             except:
                 print "Command: '", command, "'failed. Please check your file name and try again."
         elif command[:6] == "window":
-            print "TODO"
+            clientSocket.set_window_size(int(command[7:]))
+            print "Set window size to " + command[7:]
         elif command == "disconnect":
-            print "TODO"
+            clientSocket.disconnect()
+            print "Disconnecting"
+            sys.exit(0)
         else:
             print "Error: Unknown command. Please reference command list below:\n\n" \
                   "connect:       Terminates any existing connections and stops the server.\n" \
@@ -126,6 +148,6 @@ try:
                   "get [file]:    Try to retrieve a file from the server.\n" \
                   "disconnect:    Terminates any existing connections and stops the server.\n"
 except:
-    print "Error: ", sys.exc_info()
+    print "Application Exited"
 finally:
     clientSocket.close()

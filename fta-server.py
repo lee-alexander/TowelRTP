@@ -24,11 +24,11 @@ def listenForCommands(serverSocket):
         command = raw_input(">")
         print "Command: " + command
         if command == "terminate":
-            serverSocket.close()
-            os._exit(1)
+            serverSocket.disconnect()
+            os._exit(0)
         elif command[:6] == "window":
-            #TODO
-            print "TODO"
+            serverSocket.set_window_size(int(command[7:]))
+            print "Window size set to " + command[7:]
         else:
             print "Error: Unknown command. Please reference command list below:\n\n" \
                   "terminate:       Terminates any existing connections and stops the server.\n" \
@@ -54,7 +54,12 @@ try:
         serverSocket.accept()
         data = ""
         while len(data) < HEADER_SIZE:
-            data += serverSocket.receive()
+            r = serverSocket.receive()
+            if r is None:
+                serverSocket.close()
+                print "Client disconnected"
+                sys.exit(0)
+            data += r
         error, operation, filename, fileSize = decodeHeader(data)
         if operation == "1":  # post
             progress = 0
@@ -64,6 +69,10 @@ try:
             outfile.write(data[HEADER_SIZE:])
             while remaining > 0:
                 message = serverSocket.receive()
+                if message is None:
+                    print "Client disconnected"
+                    serverSocket.close()
+                    sys.exit(0)
                 data += message
                 outfile.write(message)
                 remaining -= len(message)
@@ -84,6 +93,6 @@ try:
             else:
                 serverSocket.send(encodeFileHeader(1, operation, "") + "")
 except:
-    print "Error: ", sys.exc_info()
+    print "Application Exited"
 finally:
     serverSocket.close()
