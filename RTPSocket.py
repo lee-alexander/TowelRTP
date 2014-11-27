@@ -151,13 +151,16 @@ class RTPSocket(object):
         self._pipeline.disconnect()
 
     # Close the RTP socket connection (non-blocking)
-    def close(self, broadcast=True):
+    def close(self):
         self._pipeline.stop()
 
     # Send data to the other side (non-blocking)
     def send(self, data):
         for chunk in split_data(data, RTPSocket.MTU_SIZE - RTPPacket.HEADER_SIZE):
             self._pipeline.enqueue_packet_to_send(RTPPacket(chunk))
+
+    def update_window(self):
+
 
     # Receive data from the other side (blocking)
     def receive(self):
@@ -174,7 +177,7 @@ class RTPSocket(object):
 # Bulk of the RTP protocol code. Handles data at the packet level of abstraction. Ensures reliable delivery
 # to the other side and handles connection management
 class RTPSocketPipeline(object):
-    PACKET_TIMEOUT = 2
+    PACKET_TIMEOUT = 1
 
     def __init__(self, port, rtp_socket):
         self.running = False
@@ -219,13 +222,11 @@ class RTPSocketPipeline(object):
         self.running = True
         self.transfer_thread = Thread(target=self._run_transfer, name='TransferThread')
         self.transfer_thread.start()
-        #self.timer_thread = Thread(target=self._run_timer, name='TimerThread')
-        #self.timer_thread.start()
 
     def stop(self):
+        self.connected = False
         self.running = False
         self.transfer_thread.join()
-        #self.timer_thread.join()
         self.udp_sock.close()
 
     def await_connection(self):
@@ -252,7 +253,7 @@ class RTPSocketPipeline(object):
         print('\n\nReceive base: ' + str(self.rcv_base) + '; Send Base: ' + str(self.send_base) + '; Next Seq: ' + str(self.next_seq_num) + '\n')
 
     def dequeue_packet(self):
-        while self.running:
+        while self.running and self.connected:
             try:
                 return self._receive_packets.get(timeout=1)
             except Empty:
@@ -263,15 +264,11 @@ class RTPSocketPipeline(object):
     # Thread that handles sending and receiving from the underlying socket, and associated processing
     def _run_transfer(self):
         while self.running:
-            done_anything = False
-            done_anything |= self._receive_and_process_packets()
-            done_anything |= self._send_pending_packets()
-            self._run_timer()
+            self._receive_and_process_packets()
+            self._send_pending_packets()
+            self._check_timers()
 
-            #if not done_anything: sleep(0.1)
-
-    # Thread that watches for packet timeouts
-    def _run_timer(self):
+    def _check_timers(self):
         self._pending_ack_packets_lock.acquire()
 
         oldest_seq = self._get_oldest_seq()
@@ -331,8 +328,6 @@ class RTPSocketPipeline(object):
                     self._stage_packet(pkt)
                 else:
                     log(Colors.wrap('[Received out of range packet. Window Base: ' + str(self.rcv_base) + '; this seq: ' + str(pkt.seq_num) + '*', Colors.WARNING))
-                    #import pdb
-                    #pdb.set_trace()
             else:
                 self._stage_packet(pkt)
 
