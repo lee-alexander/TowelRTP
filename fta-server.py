@@ -14,8 +14,9 @@ import os
 
 import sys
 import thread
+import time
 from RTPSocket import RTPSocket
-from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
+from fta_util import decodeHeader, HEADER_SIZE, encodeFileHeader, encodeMessageHeader
 
 
 def listenForCommands(serverSocket):
@@ -51,24 +52,37 @@ print "Server is up and listening\n"
 try:
     while 1:  # start listening and never stop
         serverSocket.accept()
-        data = serverSocket.receive()
-        operation, filename, fileSize = decodeHeader(data)
+        data = ""
+        while len(data) < HEADER_SIZE:
+            data += serverSocket.receive()
+        error, operation, filename, fileSize = decodeHeader(data)
         if operation == "1":  # post
+            progress = 0
+            lastUpdate = time.time()
             outfile = open("server-" + filename, "wr")
             remaining = fileSize + HEADER_SIZE - len(data)
             outfile.write(data[HEADER_SIZE:])
             while remaining > 0:
-                data = serverSocket.receive()
-                outfile.write(data)
-                remaining -= len(data)
+                message = serverSocket.receive()
+                data += message
+                outfile.write(message)
+                remaining -= len(message)
+                tick = time.time()
+                progress = len(data)/float((fileSize + HEADER_SIZE))
+                if tick - lastUpdate > .2:
+                    updateMessage = str(int(progress * 100)) + "%"
+                    serverSocket.send(encodeMessageHeader(0, "2", len(updateMessage)) + updateMessage)
+                    lastUpdate = time.time()
             outfile.close()
+            response = ""
+            serverSocket.send(encodeMessageHeader(0, "0", len(response)) + response)
         else:  # get
             if os.path.isfile(filename):
                 infile = open("server-" + filename)
-                serverSocket.send(encodeHeader(operation, filename) + infile.read())
+                serverSocket.send(encodeFileHeader(0, 1, filename) + infile.read())
                 infile.close()
             else:
-                serverSocket.send()
+                serverSocket.send(encodeFileHeader(1, operation, "") + "")
 except:
     print "Error: ", sys.exc_info()
 finally:

@@ -6,7 +6,7 @@ from hashlib import md5
 from time import sleep
 from datetime import datetime, timedelta
 
-DEBUG_MSG = True
+DEBUG_MSG = False
 def log(msg):
     if DEBUG_MSG: print(msg)
 

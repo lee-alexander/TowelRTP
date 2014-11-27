@@ -13,8 +13,9 @@ Example: python fta-server *TODO*
 import os
 
 import sys
+import time
 from RTPSocket import RTPSocket
-from fta_util import decodeHeader, HEADER_SIZE, encodeHeader
+from fta_util import decodeHeader, HEADER_SIZE, encodeFileHeader, printNetworkStats
 
 
 if len(sys.argv) != 4:
@@ -32,12 +33,12 @@ netEmuIp = sys.argv[2]
 netEmuPort = sys.argv[3]
 
 #socket setup
-clientSocket = RTPSocket(7798)
+clientSocket = RTPSocket(7776)
 
 response = ""
 fromAddress = ""
 try:
-    clientSocket.connect('localhost', 7799)
+    clientSocket.connect('localhost', 7777)
     while 1:  #
         command = raw_input(">")
         if command == "connect":
@@ -45,12 +46,33 @@ try:
         elif command[:4] == "post":
             filename = command[5:]
             try:
+                originalFilename = filename
                 if os.path.isfile(filename):
+                    start = time.time()
+                    progress = 0
+                    lastUpdate = time.time()
                     infile = open(filename)  # readonly by default
                     print "Posting file '", filename, "' to server..."
-                    clientSocket.send(encodeHeader(1, filename) + infile.read())
+                    clientSocket.send(encodeFileHeader(0, 1, filename) + infile.read())
                     infile.close()
-                    print "File transfer complete!"
+                    done = False
+                    while not done:
+                        response = ''
+                        while len(response) < HEADER_SIZE:
+                            response += clientSocket.receive()
+                        error, operation, filename, fileSize = decodeHeader(response)
+                        if operation == "2":
+                            remaining = fileSize + HEADER_SIZE - len(response)
+                            while remaining > 0:
+                                message = clientSocket.receive()
+                                response += message
+                                remaining -= len(message)
+                            print response[HEADER_SIZE:]
+                        else:
+                            done = True
+                            print "File was uploaded successfully."
+                            totalTime = time.time() - start
+                            printNetworkStats(totalTime, (os.path.getsize(originalFilename) + HEADER_SIZE)/totalTime)
                 else:
                     print "File not found. Please check the file name and try again."
             except:
@@ -58,17 +80,38 @@ try:
         elif command[:3] == "get":
             filename = command[4:]
             try:
-                clientSocket.send(encodeHeader(0, filename))
-                data = clientSocket.receive()
-                operation, filename, fileSize = decodeHeader(data)
-                outfile = open("client-" + filename, "wr")
-                remaining = fileSize + HEADER_SIZE - len(data)
-                outfile.write(data[HEADER_SIZE:])
-                while remaining > 0:
-                    data = clientSocket.receive()
-                    outfile.write(data)
-                    remaining -= len(data)
-                outfile.close()
+                start = time.time()
+                progress = 0
+                lastUpdate = time.time()
+                clientSocket.send(encodeFileHeader(0, 0, filename))
+                data = ""
+                while len(data) < HEADER_SIZE:
+                    data += clientSocket.receive()
+                if data[0] == "1":  # error repeat
+                    print "File not found on server. Please check the file name and try again."
+                else:
+                    print "Downloading file '", filename, "' from server..."
+                    error, operation, filename, fileSize = decodeHeader(data)
+                    outfile = open("client-" + filename, "wr")
+                    remaining = fileSize + HEADER_SIZE - len(data)
+                    outfile.write(data[HEADER_SIZE:])
+                    tick = 0
+                    while remaining > 0:
+                        message = clientSocket.receive()
+                        data += message
+                        outfile.write(message)
+                        remaining -= len(message)
+                        progress = len(data)/float((fileSize + HEADER_SIZE))
+                        tick = time.time()
+                        if tick - lastUpdate > .2:
+                            print str(int(progress * 100)) + "%"
+                            lastUpdate = time.time()
+                    outfile.close()
+                    end = time.time()
+                    print "File '" + filename + "' downloaded successfully."
+                    totalTime = end-start
+                    printNetworkStats(totalTime, len(data)/totalTime)
+
             except:
                 print "Command: '", command, "'failed. Please check your file name and try again."
         elif command[:6] == "window":

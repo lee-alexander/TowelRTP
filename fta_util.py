@@ -1,6 +1,6 @@
 import os
 
-HEADER_SIZE = 289
+HEADER_SIZE = 290
 
 
 def encodeSize(fileSize):
@@ -17,11 +17,24 @@ def encodeFilename(filename):
     return encoded
 
 
-def encodeHeader(operation, filename):
-    size = os.path.getsize(filename)
-    return str(operation) + encodeFilename(filename) + encodeSize(size)
+def encodeFileHeader(error, operation, filename):
+    if operation == 1:
+        size = os.path.getsize(filename)
+    else:
+        size = 0
+    return str(error) + str(operation) + encodeFilename(filename) + encodeSize(size)
+
+
+def encodeMessageHeader(error, operation, messageLength):
+    return str(error) + str(operation) + encodeFilename("") + encodeSize(messageLength)
 
 
 def decodeHeader(header):
-    return header[0], header[1:257].strip(), int(header[257:HEADER_SIZE])
+    return header[0], header[1], header[2:258].strip(), int(header[258:HEADER_SIZE])
+
+
+def printNetworkStats(time, rate):
+    print "Network Stats:"
+    print "Total time: " + str(time) + " seconds"
+    print "Network Rate: " + str(rate) + " bytes per second"
 
