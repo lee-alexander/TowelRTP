@@ -159,9 +159,6 @@ class RTPSocket(object):
         for chunk in split_data(data, RTPSocket.MTU_SIZE - RTPPacket.HEADER_SIZE):
             self._pipeline.enqueue_packet_to_send(RTPPacket(chunk))
 
-    def update_window(self):
-
-
     # Receive data from the other side (blocking)
     def receive(self):
         pkt = self._pipeline.dequeue_packet()
