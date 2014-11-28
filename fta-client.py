@@ -33,12 +33,12 @@ netEmuIp = sys.argv[2]
 netEmuPort = sys.argv[3]
 
 #socket setup
-clientSocket = RTPSocket(7776)
+clientSocket = RTPSocket(int(clientPort))
 
 response = ""
 fromAddress = ""
 try:
-    clientSocket.connect('localhost', 7777)
+    clientSocket.connect(netEmuIp, int(netEmuPort))
     while 1:  #
         command = raw_input(">")
         if command == "connect":
@@ -106,7 +106,7 @@ try:
                 else:
                     print "Downloading file '", filename, "' from server..."
                     error, operation, filename, fileSize = decodeHeader(data)
-                    outfile = open("client-" + filename, "wr")
+                    outfile = open(filename, "wr")
                     remaining = fileSize + HEADER_SIZE - len(data)
                     outfile.write(data[HEADER_SIZE:])
                     tick = 0
@@ -141,11 +141,11 @@ try:
             print "Disconnecting"
             sys.exit(0)
         else:
-            print "Error: Unknown command. Please reference command list below:\n\n" \
-                  "connect:       Terminates any existing connections and stops the server.\n" \
-                  "window [int]:  Takes a integer between x and z which determines the windows size.\n" \
-                  "post [file]:   Upload a file to the server.\n" \
-                  "get [file]:    Try to retrieve a file from the server.\n" \
+            print "Error: Unknown command. Please reference command list below:\n\n"\
+                  "connect:       Terminates any existing connections and stops the server.\n"\
+                  "window [int]:  Takes a integer between x and z which determines the windows size.\n"\
+                  "post [file]:   Upload a file to the server.\n"\
+                  "get [file]:    Try to retrieve a file from the server.\n"\
                   "disconnect:    Terminates any existing connections and stops the server.\n"
 except:
     print "Application Exited"

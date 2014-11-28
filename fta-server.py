@@ -30,8 +30,8 @@ def listenForCommands(serverSocket):
             serverSocket.set_window_size(int(command[7:]))
             print "Window size set to " + command[7:]
         else:
-            print "Error: Unknown command. Please reference command list below:\n\n" \
-                  "terminate:       Terminates any existing connections and stops the server.\n" \
+            print "Error: Unknown command. Please reference command list below:\n\n"\
+                  "terminate:       Terminates any existing connections and stops the server.\n"\
                   "window [int]:    Takes a integer between x and z which determines the windows size"
 
 FILE_READ_SIZE = 2048
@@ -64,7 +64,7 @@ try:
         if operation == "1":  # post
             progress = 0
             lastUpdate = time.time()
-            outfile = open("server-" + filename, "wr")
+            outfile = open(filename, "wr")
             remaining = fileSize + HEADER_SIZE - len(data)
             outfile.write(data[HEADER_SIZE:])
             while remaining > 0:
