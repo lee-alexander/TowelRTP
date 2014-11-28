@@ -7,7 +7,7 @@ A: the IP address of NetEmu
 P: the UDP port number of NetEmu
 
 
-Example: python fta-server *TODO*
+Example: python fta-server X A P
 
 """
 import os
@@ -25,7 +25,6 @@ def listenForCommands(serverSocket):
 
         if command == "terminate":
             serverSocket.disconnect()
-            os._exit(0)
         elif command[:6] == "window":
             serverSocket.set_window_size(int(command[7:]))
             print "Window size set to " + command[7:]
@@ -53,10 +52,12 @@ try:
 
         while len(data) < HEADER_SIZE:
             r = serverSocket.receive()
+
             if r is None:
                 serverSocket.close()
                 print "Client disconnected"
                 sys.exit(0)
+
             data += r
 
         error, operation, filename, fileSize = decodeHeader(data)
@@ -86,6 +87,7 @@ try:
                     updateMessage = str(int(progress * 100)) + "%"
                     serverSocket.send(encodeMessageHeader(0, "2", len(updateMessage)) + updateMessage)
                     lastUpdate = time.time()
+
             outfile.close()
             response = ""
             serverSocket.send(encodeMessageHeader(0, "0", len(response)) + response)

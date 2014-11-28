@@ -140,7 +140,7 @@ def str_bool(str):
 
 # Light wrapper around RTPSocketPipeline that deals with data at the bytestream level of abstraction
 class RTPSocket(object):
-    MTU_SIZE = 70
+    MTU_SIZE = 1000
 
     def __init__(self, port):
         # Pipeline threads for updating send/receive buffers using UDP socket info
@@ -154,6 +154,9 @@ class RTPSocket(object):
     # Connect to a server (blocking)
     def connect(self, address, port):
         return self._pipeline.connect(address, port)
+
+    def is_connected(self):
+        return self._pipeline.connected
 
     # Disconnect from the server (non-blocking)
     def disconnect(self):
@@ -172,10 +175,6 @@ class RTPSocket(object):
     def receive(self):
         pkt = self._pipeline.dequeue_packet()
         msg = None if pkt is None else pkt.payload
-
-        while self._pipeline.has_packet():
-            pkt = self._pipeline.dequeue_packet()
-            msg += '' if pkt is None else pkt.payload
 
         return msg
 
@@ -223,6 +222,7 @@ class RTPSocketPipeline(object):
         self._receive_packets_staging = {} # buffered packets that were received out of order, stored by seq_num
         self._receive_packets = Queue() # in order and final, ready to be used by upper level
         self._queued_ack_numbers = Queue() # ACK nums that need to be carried to the other side
+        self._urgent_send_packets = Queue()
 
     def update_client_info(self, other_addr, other_port):
         self.other_addr = other_addr
@@ -251,7 +251,7 @@ class RTPSocketPipeline(object):
         self.await_connection()
 
     def disconnect(self):
-        self.enqueue_packet_to_send(RTPPacket(is_disconnect=True))
+        self._urgent_send_packets.put(RTPPacket(is_disconnect=True))
         while self.connected:
             sleep(1)
 
@@ -287,6 +287,7 @@ class RTPSocketPipeline(object):
 
             if self.kill_time is not None and datetime.now() > self.kill_time:
                 self.connected = False
+                self.running = False
 
     def _check_timers(self):
         self._pending_ack_packets_lock.acquire()
@@ -324,7 +325,7 @@ class RTPSocketPipeline(object):
                     self.connected = False
                     return
                 else:
-                    self.kill_time = datetime.now() + timedelta(seconds=5)
+                    self.kill_time = datetime.now() + timedelta(seconds=7)
                     self._send_packet(RTPPacket(is_disconnect=True, is_ack=True, seq_num=self.next_seq_num))
                     self.next_seq_num += 1
 
@@ -458,7 +459,7 @@ class RTPSocketPipeline(object):
         if self.next_seq_num < self.send_base + self.send_window_size:
             self.send_window_full = False
             try:
-                pkt = self._send_packets.get(timeout=0.01)
+                pkt = self._urgent_send_packets.get() if not self._urgent_send_packets.empty() else self._send_packets.get(timeout=0.01)
                 pkt.set_seq_num(self.next_seq_num)
 
                 # Try to ferry any ACKs over

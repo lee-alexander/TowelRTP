@@ -7,7 +7,7 @@ A: the IP address of NetEmu
 P: the UDP port number of NetEmu
 
 
-Example: python fta-server *TODO*
+Example: python fta-server X A P
 
 """
 import os
@@ -36,8 +36,13 @@ try:
     while True:
         command = raw_input(">")
 
+        if connected and not clientSocket.is_connected():
+            print("The server disconnected. Exiting")
+            break
         if command == "connect":
-            connected = clientSocket.connect(netEmuIp, int(netEmuPort))
+            clientSocket.connect(netEmuIp, int(netEmuPort))
+            connected = True
+            print("Successfully connected to the server")
         elif not connected:
             print "Must connect before performing any actions"
         elif command[:4] == "post":
@@ -107,7 +112,7 @@ try:
                     sys.exit(0)
 
                 data += r
-            if data[0] == "1":  # error repeat
+            if data[0] == "1":
                 print "File not found on server. Please check the file name and try again."
             else:
                 print "Downloading file '", filename, "' from server..."
